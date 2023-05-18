@@ -11,7 +11,7 @@ const { log } = require("console");
 // Customize to your liking
 const limit = 500; // number of results returned by each query
 const releaseDate = '1577836800'; // unix timestamp for title release date
-const titleRating = '99'; // overall critic score rating of title (internal & external rating)
+const titleRating = '85'; // overall critic score rating of title (internal & external rating)
 
 function convertMsToTimer(ms) {
     const secondsToComplete = Math.ceil(ms / 1000);
@@ -120,6 +120,16 @@ async function getDeveloperNames(ids) {
     return developers.join(', ');
 }
 
+async function getReleaseDate(timestamp) {
+    const date = new Date(timestamp * 1000);
+    const day = date.getDate();
+    const month = date.getMonth() + 1;
+    const year = date.getFullYear();
+    const formattedDate = `${month}/${day}/${year}`;
+    console.log(formattedDate);
+    return formattedDate;
+}
+
 let gameDataArray = [];
 let offset = 0;
 let index = 1;
@@ -159,6 +169,7 @@ async function populateGameData(limit, offset) {
                     publishers: null,
                     platforms: await getPlatformNames(game.platforms),
                     genres: await getGenreNames(game.genres),
+                    releaseDate: await getReleaseDate(game.first_release_date),
                     description: game.summary,
                 };
                 // Add game data to the array
