@@ -9,7 +9,7 @@ const colors = require('colors');
 const { log } = require("console");
 
 // Customize to your liking
-const limit = 500; // number of results returned by each query
+const limit = 4; // number of results returned by each query
 const releaseDate = '1577836800'; // unix timestamp for title release date
 const titleRating = '99'; // overall critic score rating of title (internal & external rating)
 
@@ -126,7 +126,6 @@ async function getReleaseDate(timestamp) {
     const month = date.getMonth() + 1;
     const year = date.getFullYear();
     const formattedDate = `${month}/${day}/${year}`;
-    console.log(formattedDate);
     return formattedDate;
 }
 
@@ -184,11 +183,11 @@ async function populateGameData(limit, offset) {
             // Deley to prevent API rate limit (4 requests per second)
             setTimeout(() => {
                 index++;
-                offset += limit;
                 // This function will run again until no results are returned
-                populateGameData(500, offset + 500);
+                populateGameData(limit, offset + limit);
             }, 250);
         } else {
+            log(`✨ Found ${colors.yellow.bold(data.length)} titles matching your query`);
             console.log(`✅ Completed - added ${colors.yellow.bold(added)} titles`);
         }
 
