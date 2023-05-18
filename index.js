@@ -1,5 +1,6 @@
 require("dotenv").config();
 const fetch = require('node-fetch');
+const cheerio = require('cheerio');
 const fs = require('fs');
 const XLSX = require('xlsx');
 const { platformIds } = require('./platforms');
@@ -9,10 +10,10 @@ const colors = require('colors');
 const { log } = require("console");
 
 // Customize to your liking
-let limit = 2; // number of results returned by each query
+let limit = 500; // number of results returned by each query
 let maxQueries = null; // max amount of queries
 let releaseDate = '1577836800'; // unix timestamp for title release date
-let titleRating = '99'; // overall critic score rating of title (internal & external rating)
+let titleRating = '85'; // overall critic score rating of title (internal & external rating)
 
 function convertMsToTimer(ms) {
     const secondsToComplete = Math.ceil(ms / 1000);
@@ -76,6 +77,22 @@ async function getAgeRatingNames(ids) {
 }
 
 // Convert ids to readable names
+async function getPublisherNames(name) {
+    let publisherName;
+    await fetch(`https://www.google.com/search?q=${name}`, {
+        method: 'GET'
+    })
+        .then(response => response.text())
+        .then(data => {
+            const $ = cheerio.load(data);
+            const publisherDiv = $('div.BNeawe.s3v9rd.AP7Wnd:contains("Publisher:")').eq(0);
+            publisherName = publisherDiv.find('span.BNeawe.tAd8D.AP7Wnd a span.XLloXe.AP7Wnd').text();
+        })
+        .catch(err => console.error(err));
+    return publisherName;
+}
+
+
 async function getDeveloperNames(ids) {
     if (!ids) return;
     const developers = [];
@@ -118,7 +135,7 @@ async function getDeveloperNames(ids) {
         console.error(err);
         throw err;
     }
-    return developers.join(', ');
+    return developers[0];
 }
 
 async function getReleaseDate(timestamp) {
@@ -158,7 +175,7 @@ async function populateGameData(limit, offset) {
 
         if (data.length > 0) {
             const startTime = new Date();
-            log(`✨ Found ${colors.yellow.bold(data.length)} titles matching your query. Approx. time to complete is ${convertMsToTimer(data.length * 1500)}`);
+            log(`✨ Found ${colors.yellow.bold(data.length)} titles matching your query. Approx. time to complete is ${convertMsToTimer(data.length * 2100)}`);
 
             for (const game of data) {
                 // Create a JSON object from returned data
@@ -166,7 +183,7 @@ async function populateGameData(limit, offset) {
                     gameName: game.name,
                     ageRating: await getAgeRatingNames(game.age_ratings),
                     developers: await getDeveloperNames(game.involved_companies),
-                    publishers: null,
+                    publishers: await getPublisherNames(game.name),
                     platforms: await getPlatformNames(game.platforms),
                     genres: await getGenreNames(game.genres),
                     releaseDate: await getReleaseDate(game.first_release_date),
