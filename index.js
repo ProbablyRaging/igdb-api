@@ -11,13 +11,13 @@ const { log } = require("console");
 // Customize to your liking
 const limit = 500; // number of results returned by each query
 const releaseDate = '1577836800'; // unix timestamp for title release date
-const titleRating = '85'; // overall critic score rating of title (internal & external rating)
+const titleRating = '99'; // overall critic score rating of title (internal & external rating)
 
 function convertMsToTimer(ms) {
     const secondsToComplete = Math.ceil(ms / 1000);
     const minutes = Math.floor(secondsToComplete / 60);
     const seconds = secondsToComplete % 60;
-    return `${colors.yellow.bold(minutes)} minutes ${colors.yellow.bold(seconds)} seconds`;
+    return `${colors.yellow.bold(minutes)} ${colors.white.bold('minutes')} ${colors.yellow.bold(seconds)} ${colors.white.bold('seconds')}`;
 }
 
 // Convert ids to readable names
