@@ -9,9 +9,10 @@ const colors = require('colors');
 const { log } = require("console");
 
 // Customize to your liking
-const limit = 4; // number of results returned by each query
-const releaseDate = '1577836800'; // unix timestamp for title release date
-const titleRating = '99'; // overall critic score rating of title (internal & external rating)
+let limit = 2; // number of results returned by each query
+let maxQueries = null; // max amount of queries
+let releaseDate = '1577836800'; // unix timestamp for title release date
+let titleRating = '99'; // overall critic score rating of title (internal & external rating)
 
 function convertMsToTimer(ms) {
     const secondsToComplete = Math.ceil(ms / 1000);
@@ -183,8 +184,11 @@ async function populateGameData(limit, offset) {
             // Deley to prevent API rate limit (4 requests per second)
             setTimeout(() => {
                 index++;
-                // This function will run again until no results are returned
-                populateGameData(limit, offset + limit);
+                maxQueries--;
+                // If maxQueries is null, this function will run again until no results are returned
+                if (maxQueries == null || maxQueries !== 0) {
+                    populateGameData(limit, offset + limit);
+                }
             }, 250);
         } else {
             log(`✨ Found ${colors.yellow.bold(data.length)} titles matching your query`);
