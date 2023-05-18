@@ -33,7 +33,34 @@ async function getPlatformNames(ids) {
             }
         });
     });
-    return platforms.join(', ');
+    // Rename and sort platforms in specific order
+    const renamedPlatforms = platforms.map(platform => {
+        switch (platform) {
+            case 'PC (Microsoft Windows)':
+                return 'PC';
+            case 'PlayStation 4':
+                return 'PS4';
+            case 'PlayStation 5':
+                return 'PS5';
+            case 'Xbox Series X|S':
+                return 'Xbox Series X/S';
+            default:
+                return platform;
+        }
+    });
+    const customOrder = ['PS5', 'Xbox Series X|S', 'PC','PS4', 'Xbox One', 'Nintendo Switch', 'iOS', 'Mac'];
+    const orderedPlatforms = renamedPlatforms.sort((a, b) => {
+        const indexA = customOrder.indexOf(a);
+        const indexB = customOrder.indexOf(b);
+        if (indexA === -1) {
+            return 1;
+        } else if (indexB === -1) {
+            return -1;
+        } else {
+            return indexA - indexB;
+        }
+    });
+    return orderedPlatforms.join(', ');
 }
 
 // Convert ids to readable names
@@ -70,7 +97,7 @@ async function getAgeRatingNames(ids) {
         .then(response => response.json())
         .then(data => {
             if (!data[0].rating) return;
-            ageRating = ratingLookup[data[0].rating] || 'Unknown';
+            ageRating = ratingLookup[data[0].rating];
         })
         .catch(err => console.log(err))
     return ageRating;
