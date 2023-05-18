@@ -13,6 +13,13 @@ const limit = 500; // number of results returned by each query
 const releaseDate = '1577836800'; // unix timestamp for title release date
 const titleRating = '99'; // overall critic score rating of title (internal & external rating)
 
+function convertMsToTimer(ms) {
+    const secondsToComplete = Math.ceil(ms / 1000);
+    const minutes = Math.floor(secondsToComplete / 60);
+    const seconds = secondsToComplete % 60;
+    return `${colors.yellow.bold(minutes)} minutes ${colors.yellow.bold(seconds)} seconds`;
+}
+
 // Convert ids to readable names
 async function getPlatformNames(ids) {
     if (!ids) return;
@@ -60,6 +67,7 @@ async function getAgeRatingNames(ids) {
     )
         .then(response => response.json())
         .then(data => {
+            if (!data[0].rating) return;
             ageRating = ratingLookup[data[0].rating] || 'Unknown';
         })
         .catch(err => console.log(err))
@@ -139,6 +147,9 @@ async function populateGameData(limit, offset) {
         const data = await response.json();
 
         if (data.length > 0) {
+            const startTime = new Date();
+            log(`✨ Found ${colors.yellow.bold(data.length)} titles matching your query. Approx. time to complete is ${convertMsToTimer(data.length * 1500)}`);
+
             for (const game of data) {
                 // Create a JSON object from returned data
                 const gameData = {
@@ -156,6 +167,9 @@ async function populateGameData(limit, offset) {
                 added++;
             }
 
+            const endTime = new Date();
+            log(`🏁 Index ${colors.yellow.bold(index)} finished in ${colors.blue.bold(convertMsToTimer(endTime - startTime))}`);
+
             // Deley to prevent API rate limit (4 requests per second)
             setTimeout(() => {
                 index++;
@@ -164,7 +178,7 @@ async function populateGameData(limit, offset) {
                 populateGameData(500, offset + 500);
             }, 250);
         } else {
-            log(colors.green.bold('✔'), `Completed - added ${colors.yellow.bold(added)} titles`);
+            console.log(`✅ Completed - added ${colors.yellow.bold(added)} titles`);
         }
 
         // Write game data to JSON file
