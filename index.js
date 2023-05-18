@@ -174,7 +174,7 @@ async function populateGameData(limit, offset) {
                 };
                 // Add game data to the array
                 gameDataArray.push(gameData);
-                log(`🎮 Added game data for [${colors.cyan.bold(game.id)}] ${colors.blue.bold(game.name)}`);
+                log(`🎮 [${colors.yellow.bold(added + 1)}] Added game data for [${colors.cyan.bold(game.id)}] ${colors.blue.bold(game.name)}`);
                 added++;
             }
 
