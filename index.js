@@ -11,7 +11,7 @@ const { log } = require("console");
 
 // Customize to your liking
 let limit = 500; // number of results returned by each query
-let maxQueries = null; // max amount of queries
+let maxQueries = null; // max amount of queries (null for infinite)
 let releaseDate = '1577836800'; // unix timestamp for title release date
 let titleRating = '85'; // overall critic score rating of title (internal & external rating)
 
@@ -48,7 +48,7 @@ async function getPlatformNames(ids) {
                 return platform;
         }
     });
-    const customOrder = ['PS5', 'Xbox Series X|S', 'PC','PS4', 'Xbox One', 'Nintendo Switch', 'iOS', 'Mac'];
+    const customOrder = ['PS5', 'Xbox Series X|S', 'PC', 'PS4', 'Xbox One', 'Nintendo Switch', 'iOS', 'Mac'];
     const orderedPlatforms = renamedPlatforms.sort((a, b) => {
         const indexA = customOrder.indexOf(a);
         const indexB = customOrder.indexOf(b);
@@ -119,7 +119,7 @@ async function getPublisherNames(name) {
     return publisherName;
 }
 
-
+// Convert ids to readable names
 async function getDeveloperNames(ids) {
     if (!ids) return;
     const developers = [];
@@ -165,6 +165,61 @@ async function getDeveloperNames(ids) {
     return developers[0];
 }
 
+// Convert ids to readable names
+async function getCoverArt(id) {
+    if (!id) return;
+    let coverArt;
+
+    await fetch(
+        "https://api.igdb.com/v4/covers",
+        {
+            method: 'POST',
+            headers: {
+                'Accept': 'application/json',
+                'Client-ID': process.env.CLIENT_ID,
+                'Authorization': process.env.API_KEY,
+            },
+            body: `fields url; where game = ${id};`
+        }
+    )
+        .then(response => response.json())
+        .then(data => {
+            if (!data || !data[0]?.url) return;
+            const transformedUrl = data[0].url.replace('/t_thumb/', '/t_1080p/');
+            coverArt = `https:${transformedUrl}`;
+        })
+        .catch(err => console.log(err))
+    return coverArt;
+}
+
+// Convert ids to readable names
+async function getScreenshots(ids) {
+    if (!ids) return;
+    let screenshot;
+
+    await fetch(
+        "https://api.igdb.com/v4/screenshots",
+        {
+            method: 'POST',
+            headers: {
+                'Accept': 'application/json',
+                'Client-ID': process.env.CLIENT_ID,
+                'Authorization': process.env.API_KEY,
+            },
+            body: `fields url; where id = ${ids[0]};`
+        }
+    )
+        .then(response => response.json())
+        .then(data => {
+            if (!data || !data[0]?.url) return;
+            const transformedUrl = data[0].url.replace('/t_thumb/', '/t_1080p/');
+            screenshot = `https:${transformedUrl}`;
+        })
+        .catch(err => console.log(err))
+    return screenshot;
+}
+
+// Convert ids to readable names
 async function getReleaseDate(timestamp) {
     const date = new Date(timestamp * 1000);
     const day = date.getDate();
@@ -192,7 +247,7 @@ async function populateGameData(limit, offset) {
                     'Client-ID': process.env.CLIENT_ID, // get from 'https://dev.twitch.tv/login'
                     'Authorization': process.env.API_KEY, // returned from POST request to 'https://id.twitch.tv/oauth2/token?client_id=abcdefg12345&client_secret=hijklmn67890&grant_type=client_credentials'
                 },
-                body: `fields id, name, platforms, total_rating, first_release_date, genres, platforms, involved_companies, summary, url, age_ratings;
+                body: `fields id, name, platforms, total_rating, first_release_date, genres, platforms, involved_companies, summary, url, age_ratings, cover, screenshots;
                       where first_release_date > ${releaseDate} & total_rating > ${titleRating} & name != null & platforms != null;
                       limit ${limit};
                       offset ${offset};`
@@ -202,7 +257,7 @@ async function populateGameData(limit, offset) {
 
         if (data.length > 0) {
             const startTime = new Date();
-            log(`✨ Found ${colors.yellow.bold(data.length)} titles matching your query. Approx. time to complete is ${convertMsToTimer(data.length * 2100)}`);
+            log(`✨ Found ${colors.yellow.bold(data.length)} titles matching your query. Approx. time to complete is ${convertMsToTimer(data.length * 2800)}`);
 
             for (const game of data) {
                 // Create a JSON object from returned data
@@ -215,6 +270,8 @@ async function populateGameData(limit, offset) {
                     genres: await getGenreNames(game.genres),
                     releaseDate: await getReleaseDate(game.first_release_date),
                     description: game.summary,
+                    cover: await getCoverArt(game.id),
+                    screenshots: await getScreenshots(game.screenshots)
                 };
                 // Add game data to the array
                 gameDataArray.push(gameData);
